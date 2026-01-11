@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum SubscriptionTier {
+  FREE
+  PRO
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  company       String?
+  phoneNumber   String?   @unique
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          Role      @default(USER)
+  tier          SubscriptionTier @default(FREE)
+  storageLimit  BigInt    @default(5368709120) // 5GB in bytes
+  storageUsed   BigInt    @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Link to the access code used for registration
+  accessCodeId  String?   @unique
+  accessCode    AccessCode? @relation(fields: [accessCodeId], references: [id])
+  
+  // User's files and folders
+  files         File[]
+  folders       Folder[]
+  
+  // Payments and sessions
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  tier      SubscriptionTier
+  status    String   // active, expired, canceled
+  amount    Int
+  currency  String   @default("NGN")
+  stripeId  String?  @unique // Or Paystack reference
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model AccessCode {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  isUsed    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  usedAt    DateTime?
+  expiresAt DateTime?
+
+  // Relation to the user who used this code
+  user      User?
+}
+
+model File {
+  id          String   @id @default(cuid())
+  name        String
+  size        BigInt
+  mimeType    String
+  storageKey  String   @unique
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  folderId    String?
+  folder      Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  
+  isPublic    Boolean  @default(false)
+  shareToken  String?  @unique
+  
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([folderId])
+}
+
+model Folder {
+  id        String   @id @default(cuid())
+  name      String
+  color     String?  @default("#6D28D9") // Default primary purple
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  parentId  String?
+  parent    Folder?  @relation("FolderTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Folder[] @relation("FolderTree")
+  
+  files     File[]
+  
+  order       Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([parentId])
+}

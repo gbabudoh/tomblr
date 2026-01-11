@@ -1,0 +1,21 @@
+{
+  "name": "Tomblr Cloud Storage",
+  "short_name": "Tomblr",
+  "description": "Secure document and file storage for Nigeria.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF7F2",
+  "theme_color": "#A8B5A0",
+  "icons": [
+    {
+      "src": "/data.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/data.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
